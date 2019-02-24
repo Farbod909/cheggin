@@ -1,0 +1,22 @@
+{
+    "manifest_version": 2,
+    "name": "Cheggin",
+    "version": "1.0",
+    "description": "See who's logged into Chegg at any given time",
+    "browser_action": {
+      "icons": ["icon-16.png"],
+      "default_icon": "icon-16.png",
+      "default_popup": "popup.html"
+    },
+    "icons": { 
+        "16": "icon-16.png",
+        "48": "icon-48.png",
+       "128": "icon-128.png" 
+    },
+    "content_scripts": [{
+      "js": [ "background.js" ],
+      "matches": [ "http://*/*", "https://*/*"]
+    }],
+    "web_accessible_resources": ["icon.png", "icon-full.png"],
+    "content_security_policy": "script-src 'self' https://apis.google.com; object-src 'self'"
+}
