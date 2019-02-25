@@ -15,8 +15,24 @@ window.onload = function() {
 
 	firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
-      // User is signed in.			
-			updateUIState();
+			// User is signed in.
+			
+			db.collection("chegged-in-users")
+			.where("uid", "==", firebase.auth().currentUser.uid)
+			.orderBy('timestamp', 'desc')
+			.limit(1)
+			.get().then(function(querySnapshot) {
+				if (querySnapshot.empty) {
+					firebase.auth().currentUser.isCheggedIn = false;
+				} else {
+					firebase.auth().currentUser.isCheggedIn = true;
+					querySnapshot.forEach(function(doc) {
+						firebase.auth().currentUser.cheggedInSince = doc.data().timestamp;
+					})
+				}
+				updateUIState();
+		});
+	
     } else {
 			initializeLoggedOutUIState();
     }
@@ -33,6 +49,12 @@ function updateUIState() {
 	document.getElementById('main-page-content').classList.remove('hidden');
 	document.getElementById('login-page-content').classList.add('hidden');
 
+	if (firebase.auth().currentUser.isCheggedIn) {
+		initCheggedIn();
+	} else {
+		initCheggedOut();
+	}
+
 	db.collection("chegged-in-users")
 		.where("group", "==", "dspuci")
 		.orderBy('timestamp', 'desc')
@@ -40,12 +62,26 @@ function updateUIState() {
 		.get().then(function(querySnapshot) {
 
 			var infoMessageContent = ""
-			if (querySnapshot.size >= 3) {
-				infoMessageContent = "Queue is full :("
-			} else if (querySnapshot.size >= 0) {
-				infoMessageContent = 3 - querySnapshot.size + " available spots"
+			if (firebase.auth().currentUser.isCheggedIn) {
+				var minutes = 0
+				if ('toDate' in firebase.auth().currentUser.cheggedInSince) {
+					minutes = (new Date() - firebase.auth().currentUser.cheggedInSince.toDate()) / 1000 / 60
+				} else {
+					minutes = (new Date() - firebase.auth().currentUser.cheggedInSince) / 1000 / 60
+				}
+				infoMessageContent = "You've been Chegged in for " + parseInt(minutes, 10) + " minutes"
+			} else {
+				if (querySnapshot.size >= 3) {
+					infoMessageContent = "Queue is full :("
+					document.getElementById('action-button').classList.add('disabled');
+					document.getElementById('action-button').disabled = true;
+				} else if (querySnapshot.size >= 0) {
+					infoMessageContent = 3 - querySnapshot.size + " available spots"
+					document.getElementById('action-button').classList.remove('disabled');
+					document.getElementById('action-button').disabled = false;
+				}
 			}
-			document.getElementById('info-message').textContent = infoMessageContent;
+			document.getElementById('info-message').textContent = infoMessageContent;	
 
 			var imageSources = [];
 			querySnapshot.forEach(function(doc) {
@@ -64,17 +100,6 @@ function updateUIState() {
 
 	});
 
-	db.collection("chegged-in-users")
-		.where("uid", "==", firebase.auth().currentUser.uid)
-		.orderBy('timestamp', 'desc')
-		.limit(1)
-		.get().then(function(querySnapshot) {
-			if (querySnapshot.empty) {
-				initCheggedOut();
-			} else {
-				initCheggedIn();
-			}
-	});
 }
 
 function initializeLoggedOutUIState() {
@@ -140,11 +165,13 @@ function cheggIn(callback) {
 			timestamp: new Date()
 		})
 		.then(function(docRef) {
-				callback(docRef);
+			firebase.auth().currentUser.isCheggedIn = true;
+			firebase.auth().currentUser.cheggedInSince = new Date();
+			callback(docRef);
 		})
 		.catch(function(error) {
-				console.error("Error adding document: ", error);
-				callback();
+			console.error("Error adding document: ", error);
+			callback();
 		});
 	}
 }
@@ -156,6 +183,7 @@ function cheggOut(callback) {
 			.get().then(function(querySnapshot) {
 				querySnapshot.forEach(function(doc) {
 					doc.ref.delete().then(function() {
+						firebase.auth().currentUser.isCheggedIn = false;
 						callback();
 					}).catch(function(error) {
 						console.error("Error deleting document: ", error);
