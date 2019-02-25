@@ -10,47 +10,160 @@ var config = {
 firebase.initializeApp(config);
 var db = firebase.firestore();
 
+
 window.onload = function() {
 
 	firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
-      // User is signed in.
-      var displayName = user.displayName;
-      var email = user.email;
-      var emailVerified = user.emailVerified;
-      var photoURL = user.photoURL;
-      var isAnonymous = user.isAnonymous;
-      var uid = user.uid;
-      var providerData = user.providerData;
-      // [START_EXCLUDE]			
-			document.getElementById('main-page-content').classList.remove('hidden');
-			document.getElementById('login-page-content').classList.add('hidden');
-      // [END_EXCLUDE]
+      // User is signed in.			
+			updateUIState();
     } else {
-      // [START_EXCLUDE]			
-			document.getElementById('login-page-content').classList.remove('hidden');
-			document.getElementById('main-page-content').classList.add('hidden');
-      // [END_EXCLUDE]
+			initializeLoggedOutUIState();
     }
-    document.getElementById('login-button').disabled = false;
   });
-  // [END authstatelistener]
 
 	document.getElementById('login-button').addEventListener('click', startSignIn, false);
 	document.getElementById('logout-button').addEventListener('click', startSignOut, false);
+	document.getElementById('action-button').addEventListener('click', toggleCheggIn, false);
 	
 };
 
+function updateUIState() {
+
+	document.getElementById('main-page-content').classList.remove('hidden');
+	document.getElementById('login-page-content').classList.add('hidden');
+
+	db.collection("chegged-in-users")
+		.where("group", "==", "dspuci")
+		.orderBy('timestamp', 'desc')
+		.limit(3)
+		.get().then(function(querySnapshot) {
+
+			var infoMessageContent = ""
+			if (querySnapshot.size >= 3) {
+				infoMessageContent = "Queue is full :("
+			} else if (querySnapshot.size >= 0) {
+				infoMessageContent = 3 - querySnapshot.size + " available spots"
+			}
+			document.getElementById('info-message').textContent = infoMessageContent;
+
+			var imageSources = [];
+			querySnapshot.forEach(function(doc) {
+				imageSources.push(doc.data().photoURL + "?height=240");
+			})
+
+			var imageElements = document.getElementById('cheggedin-user-photos').getElementsByTagName('img');
+			for(var i = 0; i < imageElements.length; i++) {
+				var imageElement = imageElements[i];
+				if (imageSources[i] != null) {
+					imageElement.src = imageSources[i];
+				} else {
+					imageElement.src = chrome.extension.getURL('assets/none.png')
+				}
+			}
+
+	});
+
+	db.collection("chegged-in-users")
+		.where("uid", "==", firebase.auth().currentUser.uid)
+		.orderBy('timestamp', 'desc')
+		.limit(1)
+		.get().then(function(querySnapshot) {
+			if (querySnapshot.empty) {
+				initCheggedOut();
+			} else {
+				initCheggedIn();
+			}
+	});
+}
+
+function initializeLoggedOutUIState() {
+	document.getElementById('login-button').disabled = false;
+	document.getElementById('login-page-content').classList.remove('hidden');
+	document.getElementById('main-page-content').classList.add('hidden');
+}
+
 function startSignIn() {
-  document.getElementById('login-button').disabled = true;
-  if (!firebase.auth().currentUser) {
+	document.getElementById('login-button').disabled = true;
+	if (!firebase.auth().currentUser) {
 		var bgPage = chrome.extension.getBackgroundPage();
 		bgPage.facebookSignIn();
-  }
+	}	
 }
 
 function startSignOut() {
   if (firebase.auth().currentUser) {
-    firebase.auth().signOut();
+		cheggOut(function() {
+			firebase.auth().signOut();
+		})
   }
+}
+
+function initCheggedIn() {
+	// initialize UI if the user is chegged in
+	var action_button = document.getElementById('action-button')
+	// set button to "Chegg Out"
+	action_button.classList.remove('chegg-in')
+	action_button.classList.add('chegg-out')
+	action_button.textContent = 'Chegg Out'
+}
+
+function initCheggedOut() {
+	// initialize UI if the user is chegged out
+	var action_button = document.getElementById('action-button')
+	// set button to "Chegg In"
+	action_button.classList.remove('chegg-out')
+	action_button.classList.add('chegg-in')
+	action_button.textContent = 'Chegg In'
+}
+
+function toggleCheggIn() {
+	var action_button = document.getElementById('action-button')
+	if (action_button.classList.contains('chegg-in')) {
+		cheggIn(function(docRef) {
+			updateUIState();
+		});
+	} else if (action_button.classList.contains('chegg-out')) {
+		cheggOut(function() {
+			updateUIState();
+		});
+	}
+}
+
+function cheggIn(callback) {
+	if (firebase.auth().currentUser) {
+		db.collection("chegged-in-users").add({
+			group: "dspuci",
+			uid: firebase.auth().currentUser.uid,
+			displayName: firebase.auth().currentUser.displayName,
+			photoURL: firebase.auth().currentUser.photoURL,
+			timestamp: new Date()
+		})
+		.then(function(docRef) {
+				callback(docRef);
+		})
+		.catch(function(error) {
+				console.error("Error adding document: ", error);
+				callback();
+		});
+	}
+}
+
+function cheggOut(callback) {
+	if (firebase.auth().currentUser) {
+		db.collection("chegged-in-users")
+			.where("uid", "==", firebase.auth().currentUser.uid)
+			.get().then(function(querySnapshot) {
+				querySnapshot.forEach(function(doc) {
+					doc.ref.delete().then(function() {
+						callback();
+					}).catch(function(error) {
+						console.error("Error deleting document: ", error);
+						callback();
+					});
+				});
+		});
+	} else {
+		callback();
+	}
 }

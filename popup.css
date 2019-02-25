@@ -33,10 +33,16 @@
     cursor: pointer;
     font-family: 'Hobo Std', 'Helvetica', sans-serif;
     color: white;
+    outline: none;
 }
 
 #action-button:hover {
     background-color: #DD6401;
+}
+
+#action-button.disabled {
+    background-color: #AFAFAF;
+    cursor: default;
 }
 
 #login-button {
@@ -68,9 +74,10 @@
 }
 
 #cheggedin-user-photos img {
-    width: 32%;
+    width: 30%;
     height: auto;
     border-radius: 99999px;
+    margin: 3px;
 }
 
 #info-message {
