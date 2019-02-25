@@ -6,23 +6,28 @@
 	    <title>Cheggin</title>
 
 		<link rel="stylesheet" href="popup.css">
-
+		
 		<script src="https://www.gstatic.com/firebasejs/5.8.4/firebase.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/5.8.4/firebase-firestore.js"></script>
 		<script src="popup.js"></script>
 	</head>
 	<body>
-
-		<h3>Cheggin</h3>
-
-		<div class="quickstart-user-details-container">
-		  <button id="quickstart-button">Sign-in with Google</button>
-		  <p>
-			Firebase sign-in status: <span id="quickstart-sign-in-status">Unknown</span>
-			<div>Firebase auth <code>currentUser</code> object value:</div>
-			<pre><code id="quickstart-account-details">null</code></pre>
-		  </p>
+		<div class="container">
+			<div id="login-page-content" class="content hidden">
+				<h1>Cheggin</h1>
+				<button id="login-button">Log in with Facebook</button>
+			</div>
+			<div id="main-page-content" class="content hidden">
+				<button id="logout-button">Log Out</button>
+				<div id="cheggedin-user-photos">
+					<img src="assets/none.png">
+					<img src="assets/none.png">
+					<img src="assets/none.png">
+				</div>
+				<div id="info-message"></div>
+				<button id="request-cheggin-button" class="hidden">Request to Chegg in</button>
+				<button id="action-button">Chegg In</button>
+			</div>
 		</div>
-	  
-	
 	</body>
 </html>

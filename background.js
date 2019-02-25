@@ -9,10 +9,6 @@ var config = {
 };
 firebase.initializeApp(config);
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-});
-
 function facebookSignIn() {
     var provider = new firebase.auth.FacebookAuthProvider();
 

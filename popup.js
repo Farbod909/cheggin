@@ -8,6 +8,7 @@ var config = {
 	messagingSenderId: "557752221584"
 };
 firebase.initializeApp(config);
+var db = firebase.firestore();
 
 window.onload = function() {
 
@@ -21,32 +22,35 @@ window.onload = function() {
       var isAnonymous = user.isAnonymous;
       var uid = user.uid;
       var providerData = user.providerData;
-      // [START_EXCLUDE]
-      document.getElementById('quickstart-button').textContent = 'Sign out';
-      document.getElementById('quickstart-sign-in-status').textContent = 'Signed in';
-      document.getElementById('quickstart-account-details').textContent = JSON.stringify(user, null, '  ');
+      // [START_EXCLUDE]			
+			document.getElementById('main-page-content').classList.remove('hidden');
+			document.getElementById('login-page-content').classList.add('hidden');
       // [END_EXCLUDE]
     } else {
-      // [START_EXCLUDE]
-      document.getElementById('quickstart-button').textContent = 'Sign-in with Facebook';
-      document.getElementById('quickstart-sign-in-status').textContent = 'Signed out';
-      document.getElementById('quickstart-account-details').textContent = 'null';
+      // [START_EXCLUDE]			
+			document.getElementById('login-page-content').classList.remove('hidden');
+			document.getElementById('main-page-content').classList.add('hidden');
       // [END_EXCLUDE]
     }
-    document.getElementById('quickstart-button').disabled = false;
+    document.getElementById('login-button').disabled = false;
   });
   // [END authstatelistener]
 
-	document.getElementById('quickstart-button').addEventListener('click', startSignIn, false);
+	document.getElementById('login-button').addEventListener('click', startSignIn, false);
+	document.getElementById('logout-button').addEventListener('click', startSignOut, false);
 	
 };
 
 function startSignIn() {
-  document.getElementById('quickstart-button').disabled = true;
-  if (firebase.auth().currentUser) {
-    firebase.auth().signOut();
-  } else {
+  document.getElementById('login-button').disabled = true;
+  if (!firebase.auth().currentUser) {
 		var bgPage = chrome.extension.getBackgroundPage();
 		bgPage.facebookSignIn();
+  }
+}
+
+function startSignOut() {
+  if (firebase.auth().currentUser) {
+    firebase.auth().signOut();
   }
 }
