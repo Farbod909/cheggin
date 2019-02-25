@@ -3,31 +3,26 @@
 	<head>
 
 		<meta charset="utf-8">
-		<title>Cheggin</title>
+	    <title>Cheggin</title>
+
+		<link rel="stylesheet" href="popup.css">
 
 		<script src="https://www.gstatic.com/firebasejs/5.8.4/firebase.js"></script>
-		<script>
-			// Initialize Firebase
-			var config = {
-				apiKey: "AIzaSyDYNOO7xv3cSCBSy8Y0XGUeL6mdU1nvi3M",
-				authDomain: "cheggin-extension.firebaseapp.com",
-				databaseURL: "https://cheggin-extension.firebaseio.com",
-				projectId: "cheggin-extension",
-				storageBucket: "cheggin-extension.appspot.com",
-				messagingSenderId: "557752221584"
-			};
-			firebase.initializeApp(config);
-		</script>
-
+		<script src="popup.js"></script>
 	</head>
 	<body>
 
-		<h1>Cheggin</h1>
-		<button id="login-button">Log In</button>
+		<h3>Cheggin</h3>
 
-
-
+		<div class="quickstart-user-details-container">
+		  <button id="quickstart-button">Sign-in with Google</button>
+		  <p>
+			Firebase sign-in status: <span id="quickstart-sign-in-status">Unknown</span>
+			<div>Firebase auth <code>currentUser</code> object value:</div>
+			<pre><code id="quickstart-account-details">null</code></pre>
+		  </p>
+		</div>
+	  
 	
-	<script src="popup.js"></script>
 	</body>
 </html>
