@@ -170,6 +170,7 @@ function initCheggedOut() {
 
 function toggleCheggIn() {
 	var action_button = document.getElementById('action-button')
+	action_button.innerHTML = '<img src="assets/ajax-loader.gif">'
 	if (action_button.classList.contains('chegg-in')) {
 		cheggIn(function(docRef) {
 			updateUIState();
