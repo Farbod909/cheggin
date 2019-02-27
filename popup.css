@@ -68,16 +68,23 @@
 
 #cheggedin-user-photos {
     width: 100%;
-    height: 80px;
     text-align: center;
-    margin-bottom: 25px;
+    margin-bottom: 5px;
 }
 
-#cheggedin-user-photos img {
+#cheggedin-user-photos .chegged-in {
+    display: inline-block;
     width: 30%;
+    height: 100%;
+    padding: 3px;
+    vertical-align: top;
+}
+
+#cheggedin-user-photos .chegged-in img {
+    width: 100%;
     height: auto;
     border-radius: 99999px;
-    margin: 3px;
+
 }
 
 #info-message {

@@ -55,8 +55,23 @@ function updateUIState() {
 		initCheggedOut();
 	}
 
+	chrome.storage.local.get(['groupKey'], function(result) {
+		if (typeof result.groupKey !== 'undefined') {
+			var groupKey = result.groupKey;
+			updateCheggedInUsers(groupKey);
+		} else {
+			var groupKey = window.prompt("Please enter your group key");
+			chrome.storage.local.set({"groupKey": groupKey}, function() {
+				updateCheggedInUsers(groupKey);
+			});
+		}
+	});
+
+}
+
+function updateCheggedInUsers(groupKey) {
 	db.collection("chegged-in-users")
-		.where("group", "==", "dspuci")
+		.where("group", "==", groupKey)
 		.orderBy('timestamp', 'desc')
 		.limit(3)
 		.get().then(function(querySnapshot) {
@@ -84,8 +99,10 @@ function updateUIState() {
 			document.getElementById('info-message').textContent = infoMessageContent;	
 
 			var imageSources = [];
+			var names = [];
 			querySnapshot.forEach(function(doc) {
 				imageSources.push(doc.data().photoURL + "?height=240");
+				names.push(doc.data().displayName);
 			})
 
 			var imageElements = document.getElementById('cheggedin-user-photos').getElementsByTagName('img');
@@ -98,8 +115,17 @@ function updateUIState() {
 				}
 			}
 
-	});
+			var nameElements = document.getElementById('cheggedin-user-photos').getElementsByClassName('chegged-in-name');
+			for(var i = 0; i < nameElements.length; i++) {
+				var nameElement = nameElements[i];
+				if (names[i] != null) {
+					nameElement.textContent = names[i];
+				} else {
+					nameElement.textContent = "Available"
+				}
+			}
 
+	});
 }
 
 function initializeLoggedOutUIState() {
@@ -155,23 +181,42 @@ function toggleCheggIn() {
 	}
 }
 
+function cheggInToGroup(groupKey, callback) {
+	db.collection("chegged-in-users").add({
+		group: groupKey,
+		uid: firebase.auth().currentUser.uid,
+		displayName: firebase.auth().currentUser.displayName,
+		photoURL: firebase.auth().currentUser.photoURL,
+		timestamp: new Date()
+	})
+	.then(function(docRef) {
+		firebase.auth().currentUser.isCheggedIn = true;
+		firebase.auth().currentUser.cheggedInSince = new Date();
+		callback(docRef);
+	})
+	.catch(function(error) {
+		console.error("Error adding document: ", error);
+		callback();
+	});
+}
+
 function cheggIn(callback) {
 	if (firebase.auth().currentUser) {
-		db.collection("chegged-in-users").add({
-			group: "dspuci",
-			uid: firebase.auth().currentUser.uid,
-			displayName: firebase.auth().currentUser.displayName,
-			photoURL: firebase.auth().currentUser.photoURL,
-			timestamp: new Date()
-		})
-		.then(function(docRef) {
-			firebase.auth().currentUser.isCheggedIn = true;
-			firebase.auth().currentUser.cheggedInSince = new Date();
-			callback(docRef);
-		})
-		.catch(function(error) {
-			console.error("Error adding document: ", error);
-			callback();
+		chrome.storage.local.get(['groupKey'], function(result) {
+			console.log(result.groupKey);
+			if (typeof result.groupKey !== 'undefined') {
+				var groupKey = result.groupKey;
+				cheggInToGroup(groupKey, function() {
+					callback();
+				});
+			} else {
+				var groupKey = window.prompt("Please enter your group key");
+				chrome.storage.local.set({groupKey: groupKey}, function() {
+					cheggInToGroup(groupKey, function() {
+						callback();
+					});
+				});
+			}
 		});
 	}
 }
